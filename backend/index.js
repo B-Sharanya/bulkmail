@@ -6,12 +6,9 @@ const mongoose = require('mongoose');
 const app = express();
 
 app.use(cors({
-    origin: function (origin, callback) {
-        return callback(null, true);
-    },
+    origin: "*",
     methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true
+    allowedHeaders: ["Content-Type", "Authorization"]
 }));
 app.use(express.json());
 
