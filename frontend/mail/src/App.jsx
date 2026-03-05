@@ -34,16 +34,20 @@ function App() {
 
   function send() {
     setstatus(true)
-    axios.post("https://mail-xi-gold.vercel.app", { msg: msg, emaillist: emaillist })
+    axios.post("https://mail-xi-gold.vercel.app/sendemail", { msg: msg, emaillist: emaillist, sub: subject })
       .then(function (data) {
-        if (data.data === true) {
-          alert("Emails sent successfully")
+        if (data.data.success === true) {
+          alert(`Emails sent successfully (${data.data.sent}/${data.data.total})`)
           setstatus(false)
         }
         else {
-          alert("Error in sending emails")
+          alert("Error in sending emails: " + (data.data.error || "Unknown error"))
           setstatus(false)
         }
+      })
+      .catch(function (error) {
+        alert("Error connecting to server")
+        setstatus(false)
       })
   }
 
@@ -212,7 +216,7 @@ function App() {
                 </div>
               )}
             </div>
-            
+
           </div>
         </div>
 
