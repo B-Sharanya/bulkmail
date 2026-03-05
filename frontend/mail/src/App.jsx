@@ -34,7 +34,7 @@ function App() {
 
   function send() {
     setstatus(true)
-    axios.post("https://mail-xi-gold.vercel.app/sendemail", { msg: msg, emaillist: emaillist, sub: subject })
+    axios.post("https://mailb-lovat.vercel.app/sendemail", { msg: msg, emaillist: emaillist, sub: subject })
       .then(function (data) {
         if (data.data.success === true) {
           alert(`Emails sent successfully (${data.data.sent}/${data.data.total})`)
