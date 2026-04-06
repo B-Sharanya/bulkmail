@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const nodemailer = require("nodemailer");
@@ -18,6 +19,9 @@ let isConnected = false;
 const connectDB = async () => {
     if (isConnected) return;
     try {
+        if (!mongoURI) {
+            throw new Error("MONGO_URI not found in environment variables");
+        }
         if (mongoose.connection.readyState === 1) {
             isConnected = true;
             return;
@@ -26,6 +30,7 @@ const connectDB = async () => {
         isConnected = true;
     } catch (err) {
         console.error("MongoDB Connection Error:", err.message);
+        throw err;
     }
 };
 
@@ -41,7 +46,7 @@ app.get("/", async function (req, res) {
         await connectDB();
         res.json({ status: "Backend Running", database: "Connected" });
     } catch (err) {
-        res.status(500).json({ status: "Backend Running", database: "Failed" });
+        res.status(500).json({ status: "Backend Running", database: "Failed", error: err.message });
     }
 });
 
@@ -59,15 +64,19 @@ app.post("/sendemail", async function (req, res) {
             return res.status(500).send({ error: "No credentials found in database" });
         }
 
+        // Clean password in case it contains spaces (Google App Passwords often have spaces)
+        const cleanPass = data.pass.replace(/\s+/g, '');
+
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
                 user: data.user,
-                pass: data.pass
+                pass: cleanPass
             }
         });
 
         let successCount = 0;
+        let errors = [];
         for (let i = 0; i < emaillist.length; i++) {
             try {
                 await transporter.sendMail({
@@ -78,12 +87,19 @@ app.post("/sendemail", async function (req, res) {
                 });
                 successCount++;
             } catch (error) {
-                console.error("Failed for:", emaillist[i]);
+                console.error("Failed for:", emaillist[i], "Error:", error.message);
+                errors.push({ email: emaillist[i], error: error.message });
             }
         }
 
-        res.send({ success: true, sent: successCount, total: emaillist.length });
+        res.send({
+            success: successCount > 0,
+            sent: successCount,
+            total: emaillist.length,
+            errors: errors.length > 0 ? errors : undefined
+        });
     } catch (error) {
+        console.error("SendEmail Route Error:", error.message);
         res.status(500).send({ success: false, error: error.message });
     }
 });
